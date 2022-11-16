@@ -9,8 +9,8 @@ setup(
     author_email='msouza.os@hotmail.com',
     version='1.0.0',
     description='A neural net which detect and spot any tumor in brain tomography images.',
-    long_description=open('README', 'r').read(),
-    license='LICENSE',
+    long_description=open('README.md', 'r').read(),
+    license='LICENSE.txt',
     packages=find_packages(),
     python_requires='==3.9.13',
     install_requires=[
