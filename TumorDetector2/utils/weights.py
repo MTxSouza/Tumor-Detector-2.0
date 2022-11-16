@@ -37,9 +37,9 @@ class TrainLogging:
         learning_rate: float,
         batch: int,
         loss_transformation: str,
-        loss_graph: plt.Figure,
-        validation_graph: plt.Figure,
-        save_as_best: bool
+        loss_graph: plt.Figure = None,
+        validation_graph: plt.Figure = None,
+        save_as_best: bool = False
         ) -> None:
         """Save all training informations in a specific model folder.
 
@@ -59,9 +59,9 @@ class TrainLogging:
             learning_rate (float): Learinig rate of training.
             batch (int): Batch of Dataset.
             loss_transformation (str): Transformation has done in loss values.
-            loss_graph (plt.Figure): Figure of training loss.
-            validation_graph (plt.Figure): Figure of validation graph.
-            save_as_best (bool): Specify if the current savement is the best.
+            loss_graph (plt.Figure, optional): Figure of training loss.
+            validation_graph (plt.Figure, optional): Figure of validation graph.
+            save_as_best (bool, optional): Specify if the current savement is the best.
         """
         
         # checking variables
@@ -93,9 +93,9 @@ class TrainLogging:
         
         assert isinstance(loss_transformation, (str)), 'Invalid type. loss_transformation must be a str'
         
-        assert isinstance(loss_graph, (plt.Figure)), 'Invalid type. loss_graph must be a matplotlib.pyplot.Figure'
+        assert isinstance(loss_graph, (plt.Figure, None)), 'Invalid type. loss_graph must be a matplotlib.pyplot.Figure'
         
-        assert isinstance(validation_graph, (plt.Figure)), 'Invalid type. validation_graph must be a matplotlib.pyplot.Figure'
+        assert isinstance(validation_graph, (plt.Figure, None)), 'Invalid type. validation_graph must be a matplotlib.pyplot.Figure'
         
         assert isinstance(save_as_best, (bool)), 'Invalid type. save_as_best must be a bool'
         
@@ -123,11 +123,14 @@ class TrainLogging:
         # saving weights
         if save_as_best:
             model.save_weights(os.path.join(self.__model, 'checkpoints.h5'), save_format='h5')
-            validation_graph.savefig(os.path.join(self.__graphs, 'best_validation_data.png'), bbox_inches='tight')
+            if not validation_graph is None:
+                validation_graph.savefig(os.path.join(self.__graphs, 'best_validation_data.png'), bbox_inches='tight')
         
         # saving graphs
-        loss_graph.savefig(os.path.join(self.__graphs, 'loss_graph.png'), bbox_inches='tight')
-        validation_graph.savefig(os.path.join(self.__graphs, 'validation_data.png'), bbox_inches='tight')
+        if not loss_graph is None:
+            loss_graph.savefig(os.path.join(self.__graphs, 'loss_graph.png'), bbox_inches='tight')
+        if not validation_graph is None:
+            validation_graph.savefig(os.path.join(self.__graphs, 'validation_data.png'), bbox_inches='tight')
 
 def load_architecture(version: str) -> tf.Module:
     """Load the model architecture given a json file which contains
