@@ -4,8 +4,8 @@ from TumorDetector2.utils.metrics import DiceCoeficient,\
                                          IoU,\
                                          loss_menager,\
                                          apply_threshold
-from TumorDetector2.utils.data import load_tfrecord
 from tensorflow.keras.losses import BinaryCrossentropy
+from TumorDetector2.utils.data import load_tfrecord
 from tensorflow.keras.optimizers import Adam
 from tensorflow import GradientTape
 from tqdm import tqdm
