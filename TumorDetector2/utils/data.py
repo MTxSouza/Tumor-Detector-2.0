@@ -84,14 +84,8 @@ def to_csv(image_path: str, mask_path: str) -> None:
 
             # updating image path with correct 
             # extension
-            __new_current_image_path = __current_image_path.replace(
-                __old='.' + __current_image_path.split('.')[-1],
-                __new='.jpeg'
-            )
-            __new_current_mask_path = __current_mask_path.replace(
-                __old='.' + __current_mask_path.split('.')[-1],
-                __new='.jpeg'
-            )
+            __new_current_image_path = __current_image_path.replace(__old='.' + __current_image_path.split('.')[-1], __new='.jpeg')
+            __new_current_mask_path = __current_mask_path.replace(__old='.' + __current_mask_path.split('.')[-1],__new='.jpeg')
             
             # removing old data and saving the new one
             os.remove(__current_image_path)
