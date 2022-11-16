@@ -48,7 +48,7 @@ if __name__=='__main__':
     # or to create a new one
     if not IGNORE_CSV:
         try:
-            __dataset = pd.read_csv('../data/dataset.csv')
+            __dataset = pd.read_csv('TumorDetector2/data/dataset.csv')
             # removing 'Unnamed: 0' column if it exists
             if 'Unnamed: 0' in __dataset.columns:
                 __dataset.drop(labels='Unnamed: 0', axis=1, inplace=True)
@@ -62,16 +62,16 @@ if __name__=='__main__':
     TRAIN, TEST, VAL = split_dataset(__dataset, TRAIN_SIZE, TEST_SIZE)
     
     # writting tfrecord file
-    for dataframe, filename in zip([TRAIN, TEST, VAL], ['train.tfrecord', 'test.ftrecord', 'val.tfrecord']):
+    for dataframe, filename, normalize in zip([TRAIN, TEST, VAL], ['train.tfrecord', 'test.ftrecord', 'val.tfrecord'], [True, False, False]):
         
-        with TFRecordWriter(path=os.path.join('../data', filename)) as tfrecord:
+        with TFRecordWriter(path=os.path.join('TumorDetector2/data', filename)) as tfrecord:
             for image, mask, label in tqdm(iterable=np.asmatrix(data=dataframe), desc=f'Writting {filename}'):
                 
                 # creating tfrecord example
                 __example = tf.train.Example(features=tf.train.Features(
                     feature={
-                        'image': bytes_feature(x=serialize_image(image, 'train')),
-                        'mask': bytes_feature(x=serialize_image(mask)),
+                        'image': bytes_feature(x=serialize_image(image, normalize)),
+                        'mask': bytes_feature(x=serialize_image(mask, True)),
                         'label': int64_feature(x=label)
                     }
                 ))
