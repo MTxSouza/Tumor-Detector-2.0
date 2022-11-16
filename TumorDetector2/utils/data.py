@@ -229,9 +229,9 @@ def test_dataset() -> TFRecordDataset:
 """
 Features serialization
 """
-def serialize_image(x, data_type):
+def serialize_image(x, normalize):
     x = np.array(Image.open(x), dtype='float32')
-    if data_type == 'train' and x.max() == 255.0:
+    if normalize and x.max() == 255.0:
         x = x / 255.0 # diving by 255.0 to speed up training inference
     x = tf.convert_to_tensor(value=x, dtype=tf.float32)
     return tf.io.serialize_tensor(tensor=x)
