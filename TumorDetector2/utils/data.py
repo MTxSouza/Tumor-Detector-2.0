@@ -203,17 +203,15 @@ def load_tfrecord(batch: int, prefetch: int, shuffle: bool) -> Union[TFRecordDat
     assert isinstance(shuffle, (bool)), 'Invalid type. shuffle must be a bool'
     
     # loading files
-    __train = TFRecordDataset(
-        filenames='TumorDetector2/data/train.tfrecord'
-    ).map(__tfrecord_reader).batch(batch).prefetch(prefetch).shuffle(shuffle)
-    __test = TFRecordDataset(
-        filenames='TumorDetector2/data/test.tfrecord'
-    ).map(__tfrecord_reader).batch(batch).prefetch(prefetch).shuffle(shuffle)
-    __val = TFRecordDataset(
-        filenames='TumorDetector2/data/val.tfrecord'
-    ).map(__tfrecord_reader).batch(batch).prefetch(prefetch).shuffle(shuffle)
+    __tfrecord_dataset = []
+    for filename in ['train.tfrecord', 'test.tfrecord', 'val.tfrecord']:
+        __tfrecord_dataset.append(
+            TFRecordDataset(
+                filenames=os.path.join('TumorDetector2/data', filename)
+            ).map(__tfrecord_reader).batch(batch).prefetch(prefetch).shuffle(shuffle)
+        )
     
-    return __train, __test, __val
+    return __tfrecord_dataset
 
 def test_dataset() -> TFRecordDataset:
     """Load the test.tfrecord to test the trained model.
