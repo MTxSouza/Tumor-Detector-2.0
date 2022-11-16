@@ -118,7 +118,7 @@ def to_csv(image_path: str, mask_path: str) -> None:
                 __dataset['label'].append(1 if np.array(Image.open(fp=__new_current_mask_path)).sum() else 0)
     
     # creating dataframe
-    __dataset = pd.DataFrame(__dataset).to_csv(path_or_buf='../data/dataset.csv')
+    __dataset = pd.DataFrame(__dataset).to_csv(path_or_buf='TumorDetector2/data/dataset.csv')
     return __dataset
 
 def split_dataset(dataset: pd.DataFrame, train_size: float, test_size: float) -> Union[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -204,13 +204,13 @@ def load_tfrecord(batch: int, prefetch: int, shuffle: bool) -> Union[TFRecordDat
     
     # loading files
     __train = TFRecordDataset(
-        filenames='../data/train.tfrecord'
+        filenames='TumorDetector2/data/train.tfrecord'
     ).map(__tfrecord_reader).batch(batch).prefetch(prefetch).shuffle(shuffle)
     __test = TFRecordDataset(
-        filenames='../data/test.tfrecord'
+        filenames='TumorDetector2/data/test.tfrecord'
     ).map(__tfrecord_reader).batch(batch).prefetch(prefetch).shuffle(shuffle)
     __val = TFRecordDataset(
-        filenames='../data/val.tfrecord'
+        filenames='TumorDetector2/data/val.tfrecord'
     ).map(__tfrecord_reader).batch(batch).prefetch(prefetch).shuffle(shuffle)
     
     return __train, __test, __val
@@ -222,7 +222,7 @@ def test_dataset() -> TFRecordDataset:
     first.
     """
     try:
-        return tf.data.TFRecordDataset(filenames=os.path.join('../data', 'test.tfrecord')).map(__tfrecord_reader).batch(1).shuffle(True)
+        return tf.data.TFRecordDataset(filenames=os.path.join('TumorDetector2/data', 'test.tfrecord')).map(__tfrecord_reader).batch(1).shuffle(True)
     except Exception as e:
         raise FileExistsError(e)
 
