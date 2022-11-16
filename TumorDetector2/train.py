@@ -1,5 +1,6 @@
 # imports
-from TumorDetector2.utils.weights import load_architecture
+from TumorDetector2.utils.weights import load_architecture,\
+                                         TrainLogging
 from TumorDetector2.utils.metrics import DiceCoeficient,\
                                          IoU,\
                                          loss_menager,\
@@ -43,8 +44,8 @@ if __name__=='__main__':
     LOSS = BinaryCrossentropy()
     METRIC = arg.metrics
     SHUFFLE = arg.shuffle
-    LEARINING_RATE = arg.learning_rate
-    OPTIMIZER = Adam(LEARINING_RATE)
+    LEARNING_RATE = arg.learning_rate
+    OPTIMIZER = Adam(LEARNING_RATE)
     PREFETCH = arg.prefetch
     THRESHOLD = arg.threshold
     EARLY_STOP = arg.early_stop
@@ -62,8 +63,8 @@ if __name__=='__main__':
     elif METRIC == 'dice coeficient':
         METRIC = DiceCoeficient()
 
-    assert isinstance(LEARINING_RATE, (float)), 'Invalid type. --learning-rate must be a float'
-    assert LEARINING_RATE > 0, 'Invalid value. --learining-rate must be bigger than zero'
+    assert isinstance(LEARNING_RATE, (float)), 'Invalid type. --learning-rate must be a float'
+    assert LEARNING_RATE > 0, 'Invalid value. --learining-rate must be bigger than zero'
 
     assert isinstance(THRESHOLD, (float)), 'Invalid type. --threshold must be a float'
     assert THRESHOLD >= 0, 'Invalid value. --threshold must be bigger than zero or equal'
@@ -96,11 +97,13 @@ if __name__=='__main__':
 
     TOTAL_ITERATIONS = None
 
+    TRAIN_LOGGING = TrainLogging()
+
     print('-'*80)
     print('Tumor Detector 2.0 - BRAIN (Brazilian Artificial Inteligence Nucleus)')
     print('-'*80)
     print(f'Loss Function: {LOSS.name} | Accuracy function: {METRIC.name} | Optimizer: {OPTIMIZER._name}')
-    print(f'Learning Rate: {LEARINING_RATE} - Batch size: {BATCH} - Epochs: {EPOCHS} - Threshold: {THRESHOLD} - Early Stop: {EARLY_STOP}')
+    print(f'Learning Rate: {LEARNING_RATE} - Batch size: {BATCH} - Epochs: {EPOCHS} - Threshold: {THRESHOLD} - Early Stop: {EARLY_STOP}')
     print('-'*80)
 
     for epoch in range(1, EPOCHS+1):
@@ -172,6 +175,36 @@ if __name__=='__main__':
             mean_val_accuracy += accuracy
         mean_val_loss /= (iterations + 1) # mean loss of validation
         mean_val_accuracy /= (iterations + 1) # mean accuracy of validation
+
+        # saving weights
+        SAVE = False
+        if BEST_LOSS is None or (mean_loss < BEST_LOSS and mean_val_loss < BEST_VAL_LOSS):
+            BEST_LOSS = mean_loss
+            BEST_VAL_LOSS = mean_val_loss
+            ACCURACY = mean_accuracy
+            VAL_ACCURACY = mean_val_accuracy
+            SAVE = True
+
+        TRAIN_LOGGING.save(
+            MODEL,
+            VERSION,
+            BEST_LOSS,
+            BEST_VAL_LOSS,
+            ACCURACY,
+            VAL_ACCURACY,
+            LOSS.name,
+            METRIC.name,
+            OPTIMIZER._name,
+            epoch,
+            EPOCHS,
+            THRESHOLD,
+            LEARNING_RATE,
+            BATCH,
+            LOSS_TRANSFORMER,
+            None,
+            None,
+            SAVE
+        )
         
         # displaying results
         print(f'| Train loss: {mean_loss.numpy()} - Val loss: {mean_val_loss.numpy()} | Train accuracy: {mean_accuracy.numpy()} - Val accuracy: {mean_val_accuracy.numpy()} |')
