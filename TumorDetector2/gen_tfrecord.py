@@ -3,7 +3,8 @@ from TumorDetector2.utils.data import to_csv,\
                                       serialize_image,\
                                       bytes_feature,\
                                       int64_feature,\
-                                      split_dataset
+                                      split_dataset,\
+                                      load_tfrecord
 from tensorflow._api.v2.io import TFRecordWriter                
 from tqdm import tqdm
 
@@ -80,5 +81,14 @@ if __name__=='__main__':
                     }
                 ))
                 tfrecord.write(__example.SerializeToString())
+                
+    # checking tfrecord files
+    TRAIN, TEST, VAL = load_tfrecord(2, 1, True)
+    
+    try:
+        for (image, mask, label) in TEST:
+            pass
+    except Exception as e:
+        raise RuntimeError(e)
             
     print('TFRecord has been created at Tumor-Detector-2.0/TumorDetector2/data/')
