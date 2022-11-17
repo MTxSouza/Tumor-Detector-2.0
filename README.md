@@ -18,7 +18,19 @@ Tumor Detector 2.0 consists in a neural network which has the capability to loca
     The accuracy metric used can be either *Intersection Over Union* (IoU) or *Dice Coeficient* to calculate the overlapping between the predicted and the real mask. It gives us the accuracy of localization of the predicted mask.
 
 ## **Predictions**
-The TumorNet was tested using three differents threshold values, which can easily interpreted as confidence score. Even with differents threshold, the same good result can be seen in all images.
+The TumorNet was tested using three differents threshold values, which can easily interpreted as confidence score. Even with differents threshold, the same good result can be seen in some of the test images.
+- Training Parameters:
+    - Loss Function: Binary Cross Entropy
+    - Accuracy Function: Dice Coeficient
+    - Optimizer: Adam
+    - Learning Rate: 5e-5
+    - Batch Size: 4
+    - Threshold: 0.5
+- Scores:
+    - Loss: 0.005536206532269716
+    - Val loss: 0.015415273606777191
+    - Accuracy: 0.9206175208091736
+    - Val accuracy: 0.8173767328262329
 
 <img src="docs/images/predictions_example.png" style="border-radius: 10px">
 
