@@ -1,5 +1,4 @@
-# **Tumor Detector 2.0**
-*Tumor brain localization using deep learning.*
+<img src="docs/Tumor Detector 2.0 - Logo.png" style="border-radius: 20px">
 
 ---
 ## **About**
