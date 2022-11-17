@@ -57,6 +57,10 @@ if __name__=='__main__':
     else:
         __dataset = to_csv(IMAGE_PATH, MASK_PATH)
         
+    # removing 'Unnamed: 0' column
+    if 'Unnamed: 0' in __dataset.columns:
+        __dataset.drop(labels='Unnamed: 0', axis=1, inplace=True)
+        
     # splitting dataset into train, test and validation
     # data
     TRAIN, TEST, VAL = split_dataset(__dataset, TRAIN_SIZE, TEST_SIZE)
@@ -65,7 +69,7 @@ if __name__=='__main__':
     for dataframe, filename, normalize in zip([TRAIN, TEST, VAL], ['train.tfrecord', 'test.ftrecord', 'val.tfrecord'], [True, False, False]):
         
         with TFRecordWriter(path=os.path.join('TumorDetector2/data', filename)) as tfrecord:
-            for image, mask, label in tqdm(iterable=np.asmatrix(data=dataframe), desc=f'Writting {filename}'):
+            for image, mask, label in tqdm(iterable=np.array(dataframe), desc=f'Writting {filename}'):
                 
                 # creating tfrecord example
                 __example = tf.train.Example(features=tf.train.Features(

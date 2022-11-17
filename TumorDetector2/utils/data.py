@@ -55,64 +55,69 @@ def to_csv(image_path: str, mask_path: str) -> None:
         'label': []
     }
     
-    # getting data path
-    for current_image_name in tqdm(iterable=__images, desc='Generating DataFrame'):
+    # transforming data
+    for current_image_name in tqdm(iterable=__images, desc='Transforming data'):
         
         # getting image and mask path
         __current_image_path = os.path.join(image_path, current_image_name)
         __current_mask_path = os.path.join(mask_path, current_image_name)
         
         # checking if both exists
-        __corrupted_data = 0
         if os.path.exists(__current_image_path) and os.path.exists(__current_mask_path):
             
-            # loading data and resizing them
-            __current_image = Image.open(fp=__current_image_path)
-            __current_mask = Image.open(fp=__current_mask_path)
-        
-            # checking mode and size of
-            # both images
-            if not __current_image.mode == 'L':
-                __current_image = __current_image.convert(mode='L')
-            if not __current_image.size == (256,256):
-                __current_image = __current_image.resize(size=(256,256))
+            for data_path in [__current_image_path, __current_mask_path]:
                 
-            if not __current_mask.mode == 'L':
-                __current_mask = __current_mask.convert(mode='L')
-            if not __current_mask.size == (256,256):
-                __current_mask = __current_mask.resize(size=(256,256))
-
-            # updating image path with correct 
-            # extension
-            __new_current_image_path = __current_image_path.replace('.' + __current_image_path.split('.')[-1], '.jpeg')
-            __new_current_mask_path = __current_mask_path.replace('.' + __current_mask_path.split('.')[-1], '.jpeg')
-            
-            # removing old data and saving the new one
-            os.remove(__current_image_path)
-            __current_image.save(fp=__new_current_image_path, format='JPEG')
-            __current_image.close()
-            
-            os.remove(__current_image_path)
-            __current_mask.save(fp=__new_current_mask_path, format='JPEG')
-            __current_mask.close()
-            
+                # loading data and resizing it
+                data = Image.open(fp=data_path)
+                
+                # checking mode and size
+                if not data.mode == 'L':
+                    data = data.convert(mode='L')
+                if not data.size == (256,256):
+                    data = data.resize(size=(256,256))
+                    
+                # updating image path with correct 
+                # extension
+                if not data_path.endswith('.jpeg'):
+                    __new_data_path = data.replace('.' + data_path.split('.')[-1], '.jpeg')
+                    data.save(fp=__new_data_path, format='JPEG')
+                    data.close()
+                    
+                    # removing old data
+                    os.remove(data_path)
+                else:
+                    # closing data
+                    data.close()
+    
+    # verifying data    
+    __images = os.listdir(image_path)
+    for current_image_name in tqdm(iterable=__images, desc='Verifying data'):
+        
+        # getting image and mask path
+        __current_image_path = os.path.join(image_path, current_image_name)
+        __current_mask_path = os.path.join(mask_path, current_image_name)
+        
+        try:
             # checking if any data is corrupted
-            try:
-                for new_path in (__new_current_image_path, __new_current_mask_path):
-                    __current_data = Image.open(fp=new_path)
-                    __current_data.verify()
-                    __current_data.close()
-            except:
-                for new_path in (__new_current_image_path, __new_current_mask_path):
-                    os.remove(new_path)
-                __corrupted_data += 1
-            else:
-                __dataset['image'].append(__new_current_image_path)
-                __dataset['mask'].append(__new_current_mask_path)
-                __dataset['label'].append(1 if np.array(Image.open(fp=__new_current_mask_path)).sum() else 0)
+            for data_path in [__current_image_path, __current_mask_path]:
+            
+                __current_data = Image.open(fp=data_path)
+                __current_data.verify()
+                __current_data.close()
+        except:
+            for data_path in [__current_image_path, __current_mask_path]:
+                os.remove(data_path)
+        else:
+            __dataset['image'].append(__current_image_path)
+            __dataset['mask'].append(__current_mask_path)
+            __dataset['label'].append(1 if np.array(Image.open(fp=__current_mask_path)).sum() else 0)
     
     # creating dataframe
-    __dataset = pd.DataFrame(__dataset).to_csv(path_or_buf='TumorDetector2/data/dataset.csv')
+    __dataset = pd.DataFrame(__dataset)
+    
+    # saving CSV
+    __dataset.to_csv(path_or_buf='TumorDetector2/data/dataset.csv')
+    
     return __dataset
 
 def split_dataset(dataset: pd.DataFrame, train_size: float, test_size: float) -> Union[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
