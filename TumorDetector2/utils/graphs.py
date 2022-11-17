@@ -203,14 +203,18 @@ class TrainingGraph:
         """
         self.__structure__(self.__test_loss, self.__test_val_loss, self.__test_accuracy, self.__test_val_accuracy, self.__mean_test_loss, self.__mean_test_val_loss, self.__mean_test_accuracy, self.__mean_test_val_accuracy, self.__test_current_epoch)
     
-    def plot(self, loss: list, val_loss: list, mean_loss: EagerTensor, mean_val_loss: EagerTensor, current_epoch: int, samples: np.ndarray) -> None:
+    def plot(self, loss: list, val_loss: list, accuracy:list, val_accuracy: list, mean_loss: EagerTensor, mean_val_loss: EagerTensor, mean_accuracy: EagerTensor, mean_val_accuracy: EagerTensor, current_epoch: int, samples: np.ndarray) -> None:
         """Display the training graph.
 
         Args:
             loss (list): List of all losses of train data.
             val_loss (list): List of all losses of val data.
+            accuracy (list): List of all accuracies of train data.
+            val_accuracy (list): List of all accuracies of val data.
             mean_loss (EagerTensor): Mean train loss of current epoch.
             mean_val_loss (EagerTensor): Mean val loss of current epoch.
+            mean_accuracy (EagerTensor): Mean train accuracy of current epoch.
+            mean_val_accuracy (EagerTensor): Mean val accuracy of current epoch.
             current_epoch (int): Current epoch of training.
             samples (np.ndarray): Array of list, which contains [image, mask, predicted] data to be displyed.
         """
@@ -220,15 +224,23 @@ class TrainingGraph:
         
         assert isinstance(val_loss, (list)), 'Invalid type. val_loss must be a list'
         
+        assert isinstance(accuracy, (list)), 'Invalid type. accuracy must be a list'
+        
+        assert isinstance(val_accuracy, (list)), 'Invalid type. val_accuracy must be a list'
+        
         assert isinstance(mean_loss, (EagerTensor)), 'Invalid type. mean_loss must be a EagerTensor'
         
         assert isinstance(mean_val_loss, (EagerTensor)), 'Invalid type. mean_val_loss must be a EagerTensor'
+        
+        assert isinstance(mean_accuracy, (EagerTensor)), 'Invalid type. mean_accuracy must be a EagerTensor'
+        
+        assert isinstance(mean_val_accuracy, (EagerTensor)), 'Invalid type. mean_val_accuracy must be a EagerTensor'
         
         assert isinstance(current_epoch, (int)), 'Invalid type. current_epoch must be a float'
         
         assert isinstance(samples, (np.ndarray)), 'Invalid type. samples must be a np.ndarray'
         
-        return self.__structure__(loss, val_loss, mean_loss, mean_val_loss, current_epoch, samples)
+        return self.__structure__(loss, val_loss, accuracy, val_accuracy, mean_loss, mean_val_loss, mean_accuracy, mean_val_accuracy, current_epoch, samples)
 
 def apply_masks(image: np.ndarray, mask: np.ndarray, predicted_mask: np.ndarray) -> np.ndarray:
     """Apply both real mask and predicted mask into
