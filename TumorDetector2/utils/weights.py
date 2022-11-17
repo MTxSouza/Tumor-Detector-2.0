@@ -132,26 +132,34 @@ class TrainLogging:
         if not validation_graph is None:
             validation_graph.savefig(os.path.join(self.__graphs, 'validation_data.png'), bbox_inches='tight')
 
-def load_architecture(version: str) -> tf.Module:
+def load_architecture(version: str, enable_weights: bool) -> tf.Module:
     """Load the model architecture given a json file which contains
     the structure of model.
 
     Args:
         config (str): Path to the json file.
+        enable_weights (bool): Specify if you want to load with pre-trained weights.
     """
     
     # checking variables
     assert isinstance(version, (str)), 'Invalid type. version must be a string'
     
+    assert isinstance(enable_weights, (bool)), 'Invalid type. enable_weights must be a bool'
+    
     # setting up path
     version = os.path.join('../models', 'tumorNet_' + version + '.json')
+    __weights = os.path.join('../models', 'tumorNet_' + version + '.h5')
     
     # checking if the file exists
     if os.path.exists(version):
         try:
             # reading file
             with open(version, 'r') as architecture:
-                return model_from_json(architecture.read())
+                __model = model_from_json(architecture.read())
+                # loading weights
+                if enable_weights and os.path.exists(__weights):
+                    return __model.load_weights(__weights)
+                return __model
         except Exception as e:
             print(f"Error while reading the config file to load model. {e}.")
     else:
