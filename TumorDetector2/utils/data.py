@@ -159,7 +159,7 @@ def split_dataset(dataset: pd.DataFrame, train_size: float, test_size: float) ->
 """
 TFRecord methods
 """
-def __tfrecord_reader(example_proto):
+def _tfrecord_reader(example_proto):
     
     # parsing example
     __content = tf.io.parse_single_example(serialized=example_proto, features=TFRECORD_READER)
@@ -181,14 +181,13 @@ def __tfrecord_reader(example_proto):
     
     return __image, __mask, __label
 
-def load_tfrecord(batch: int, prefetch: int, shuffle: bool, current_directory: bool = True) -> Union[TFRecordDataset, TFRecordDataset, TFRecordDataset]:
+def load_tfrecord(batch: int, prefetch: int, shuffle: bool) -> Union[TFRecordDataset, TFRecordDataset, TFRecordDataset]:
     """Read the TFRecord file and convert it into a Dataset.
     
     Args:
         batch (int): Batch size to split the dataset.
         prefetch (int): Number of data to be prefetch while the current batch is being processing.
         shuffle (bool): Shuffle data.
-        current_directory (bool, optional): Inform if the script is running this function in the same directory of data/.
     
     Returns:
         Union[TFRecordDataset, TFRecordDataset, TFRecordDataset]: Train, Test, Validation Dataset.
@@ -203,38 +202,27 @@ def load_tfrecord(batch: int, prefetch: int, shuffle: bool, current_directory: b
     
     assert isinstance(shuffle, (bool)), 'Invalid type. shuffle must be a bool'
     
-    assert isinstance(current_directory, (bool)), 'Invalid type. current_directory must be a bool'
-    
     # loading files
     __tfrecord_dataset = []
-    __path = 'data' if current_directory else '../data'
     
     for filename in ['train.tfrecord', 'test.tfrecord', 'val.tfrecord']:
         __tfrecord_dataset.append(
             TFRecordDataset(
-                filenames=os.path.join(__path, filename)
-            ).map(__tfrecord_reader).batch(batch).prefetch(prefetch).shuffle(shuffle)
+                filenames=os.path.join('../data', filename)
+            ).map(_tfrecord_reader).batch(batch).prefetch(prefetch).shuffle(shuffle)
         )
     
     return __tfrecord_dataset
 
-def test_dataset(current_directory: bool = True) -> TFRecordDataset:
+def test_dataset() -> TFRecordDataset:
     """Load the test.tfrecord to test the trained model.
     *Make sure the run 'gen_tfrecord.py' to create
     'train.tfrecord', 'test.tfrecord' and 'val.tfrecord'
     first.
-    
-    Args:
-        current_directory (bool, optional): Inform if the script is running this function in the same directory of data/.
     """
     
-    # checking variables
-    assert isinstance(current_directory, (bool)), 'Invalid type. current_directory must be a bool'
-    
-    __path = 'data' if current_directory else '../data'
-    
     try:
-        return tf.data.TFRecordDataset(filenames=os.path.join(__path, 'test.tfrecord')).map(__tfrecord_reader).batch(1).shuffle(True)
+        return tf.data.TFRecordDataset(filenames=os.path.join('TumorDetector2/data', 'test.tfrecord')).map(_tfrecord_reader).batch(1).shuffle(True)
     except Exception as e:
         raise FileExistsError(e)
 
