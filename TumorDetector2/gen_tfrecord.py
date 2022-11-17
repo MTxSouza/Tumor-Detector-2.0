@@ -4,7 +4,8 @@ from TumorDetector2.utils.data import to_csv,\
                                       bytes_feature,\
                                       int64_feature,\
                                       split_dataset,\
-                                      load_tfrecord
+                                      load_tfrecord,\
+                                      test_dataset
 from tensorflow._api.v2.io import TFRecordWriter                
 from tqdm import tqdm
 
@@ -49,7 +50,7 @@ if __name__=='__main__':
     # or to create a new one
     if not IGNORE_CSV:
         try:
-            __dataset = pd.read_csv('TumorDetector2/data/dataset.csv')
+            __dataset = pd.read_csv('TumorDetector2/data/dataset.csv', encoding='utf-8')
             # removing 'Unnamed: 0' column if it exists
             if 'Unnamed: 0' in __dataset.columns:
                 __dataset.drop(labels='Unnamed: 0', axis=1, inplace=True)
@@ -57,17 +58,16 @@ if __name__=='__main__':
             print(f'Could not load an exists CSV dataset file. {e}')
     else:
         __dataset = to_csv(IMAGE_PATH, MASK_PATH)
-        
-    # removing 'Unnamed: 0' column
-    if 'Unnamed: 0' in __dataset.columns:
-        __dataset.drop(labels='Unnamed: 0', axis=1, inplace=True)
+        # removing 'Unnamed: 0' column
+        if 'Unnamed: 0' in __dataset.columns:
+            __dataset.drop(labels='Unnamed: 0', axis=1, inplace=True)
         
     # splitting dataset into train, test and validation
     # data
     TRAIN, TEST, VAL = split_dataset(__dataset, TRAIN_SIZE, TEST_SIZE)
     
     # writting tfrecord file
-    for dataframe, filename, normalize in zip([TRAIN, TEST, VAL], ['train.tfrecord', 'test.ftrecord', 'val.tfrecord'], [True, False, False]):
+    for dataframe, filename, normalize in zip([TRAIN, TEST, VAL], ['train.tfrecord', 'test.tfrecord', 'val.tfrecord'], [True, False, False]):
         
         with TFRecordWriter(path=os.path.join('TumorDetector2/data', filename)) as tfrecord:
             for image, mask, label in tqdm(iterable=np.array(dataframe), desc=f'Writting {filename}'):
@@ -81,14 +81,5 @@ if __name__=='__main__':
                     }
                 ))
                 tfrecord.write(__example.SerializeToString())
-                
-    # checking tfrecord files
-    TRAIN, TEST, VAL = load_tfrecord(2, 1, True)
-    
-    try:
-        for (image, mask, label) in TEST:
-            pass
-    except Exception as e:
-        raise RuntimeError(e)
             
     print('TFRecord has been created at Tumor-Detector-2.0/TumorDetector2/data/')
