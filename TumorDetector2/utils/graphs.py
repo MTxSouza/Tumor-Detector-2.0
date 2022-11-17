@@ -254,23 +254,23 @@ def apply_masks(image: np.ndarray, mask: np.ndarray, predicted_mask: np.ndarray)
     Returns:
         np.ndarray: The tomography image with the real mask and the predicted mask displayed.
     """
-    
-    image = image.copy()
 
     # applying three channels in mask
-    __background = np.zeros(shape=image.shape)
+    __background = np.zeros(shape=[256,256,3])
+    __new_image = __background.copy()
+    for channel in range(3):
+        __new_image[:,:,channel] = image
     
     # applying real mask channel
     __background[:,:,0] = mask
     
     # applying predicted channel
-    if predicted_mask.sum() > 500000:
-        __background[:,:,1] = predicted_mask
+    __background[:,:,1] = predicted_mask
 
-    __background = image * __background
+    __background = __new_image * __background
     __background = np.clip(__background, 0, 255)
     __background = __background.astype(np.uint8)
 
-    image[__background>0] = __background[__background>0]
+    __new_image[__background>0] = __background[__background>0]
 
-    return image
+    return __new_image
