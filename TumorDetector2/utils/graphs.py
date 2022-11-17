@@ -256,7 +256,7 @@ def apply_masks(image: np.ndarray, mask: np.ndarray, predicted_mask: np.ndarray)
     """
 
     # applying three channels in mask
-    __background = np.zeros(shape=[256,256,3])
+    __background = np.zeros(shape=[image.shape[0], image.shape[1], 3])
     __new_image = __background.copy()
     for channel in range(3):
         __new_image[:,:,channel] = image
@@ -269,8 +269,7 @@ def apply_masks(image: np.ndarray, mask: np.ndarray, predicted_mask: np.ndarray)
 
     __background = __new_image * __background
     __background = np.clip(__background, 0, 255)
-    __background = __background.astype(np.uint8)
 
     __new_image[__background>0] = __background[__background>0]
 
-    return __new_image
+    return __new_image.astype('uint8')

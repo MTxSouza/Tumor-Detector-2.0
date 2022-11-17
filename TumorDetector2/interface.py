@@ -1,5 +1,6 @@
 # imports
-from TumorDetector2.utils.metrics import overall_results
+from TumorDetector2.utils.metrics import overall_results,\
+                                         apply_threshold
 from TumorDetector2.utils.data import _tfrecord_reader
 from TumorDetector2.utils.graphs import apply_masks
 
@@ -10,6 +11,7 @@ from tqdm import tqdm
 
 import tensorflow as tf
 import tkinter as tk
+import numpy as np
 import os
 
 
@@ -71,7 +73,7 @@ class Screen(tk.Tk):
             set_visible_devices([], 'GPU')
 
         # loading model and images
-        __images = tf.data.TFRecordDataset(filenames=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'test.tfrecord')).map(_tfrecord_reader).batch(1).shuffle(True)
+        __images = tf.data.TFRecordDataset(filenames=os.path.join('TumorDetector2', 'data', 'test.tfrecord')).map(_tfrecord_reader).batch(1).shuffle(True)
         
         version = os.path.join('TumorDetector2/models', 'tumorNet_' + version + '.json')
         __weights = os.path.join('TumorDetector2/models', 'tumorNet_' + version + '.h5')
@@ -82,8 +84,8 @@ class Screen(tk.Tk):
                 # reading file
                 with open(version, 'r') as architecture:
                     __model = model_from_json(architecture.read())
-                    # loading weights
-                    __model.load_weights(__weights)
+                # loading weights
+                __model.load_weights(__weights)
             except Exception as e:
                 print(f"Error while reading the config file to load model. {e}.")
         else:
@@ -94,22 +96,32 @@ class Screen(tk.Tk):
         self.__pred_labels = []
         
         # inference
-        for iter, (__image, __mask, __label) in enumerate(tqdm(iterable=__images, desc='Running inferences')):
+        for __image, __mask, __label in tqdm(iterable=__images, desc='Running inferences'):
+            
+            # inference
+            __pred = __model(__image, training=False)
+            
+            # applying threshold
+            __pred = apply_threshold(__pred, 0.5)
+            self.__pred_labels.append(1 if __pred[0][:,:,0].numpy().sum() else 0)
             
             # converting images from tensor to pillow
-            __pred = __model(__image, training=False)[0][:,:,0].numpy()
-            __image = __image[0][:,:,0].numpy()
-            __mask = __mask[0][:,:,0].numpy()
+            __pred = np.array(tf.keras.utils.array_to_img(
+                        x=__pred[0], data_format='channels_last', dtype='float32'
+                    ).resize(SIZES[window_size]['image_size']))
+            __image = np.array(tf.keras.utils.array_to_img(
+                        x=__image[0], data_format='channels_last', dtype='float32'
+                    ).resize(SIZES[window_size]['image_size']))
+            __mask = np.array(tf.keras.utils.array_to_img(
+                x=__mask[0], data_format='channels_last', dtype='float32'
+            ).resize(SIZES[window_size]['image_size']))
             
             # saving labels
             self.__labels.append(__label.numpy()[0])
-            self.__pred_labels.append(1 if __pred.sum() else 0)
             
             # overlapping results
             __segmentation = apply_masks(__image, __mask, __pred)
-            self.__data.append(ImageTk.PhotoImage(image=Image.fromarray(__segmentation.astype('uint8'))))
-            if iter > 30:
-                break
+            self.__data.append(ImageTk.PhotoImage(image=Image.fromarray(__segmentation)))
         self.__n_elements = self.__data.__len__()
         # calculating results
         accuracy, recall, precision = overall_results(self.__labels, self.__pred_labels)
@@ -124,19 +136,6 @@ class Screen(tk.Tk):
         self.resizable(width=False, height=False)
         # background color
         self.config(background=BACKGROUND_COLOR)
-        # logo
-        # - loading image
-        __brain_image = Image.open(fp='docs/images/brain_logo.png')
-        # - resizing image
-        __brain_image = __brain_image.resize(size=SIZES[window_size]['icon_size'])
-        # - applying image
-        __brain_image = ImageTk.PhotoImage(image=__brain_image)
-        __brain_frame = tk.Label(self, image=__brain_image)
-        __brain_frame.image = __brain_image
-        # - logo localization
-        __brain_frame.place(relx=0.4, rely=0.0, relwidth=0.2, relheight=0.1)
-        # - background color
-        __brain_frame.config(background=BACKGROUND_COLOR)
 
         # setting up configurations of image frame
         self.__image_frame = tk.Label(master=self, image=self.__current_image)
