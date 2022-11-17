@@ -1,16 +1,16 @@
 # imports
-from TumorDetector2.utils.weights import load_architecture
 from TumorDetector2.utils.metrics import overall_results
+from TumorDetector2.utils.data import _tfrecord_reader
 from TumorDetector2.utils.graphs import apply_masks
-from TumorDetector2.utils.data import test_dataset
 
 from tensorflow._api.v2.config import set_visible_devices
-from tensorflow.keras.utils import array_to_img
+from tensorflow.keras.models import model_from_json
 from PIL import ImageTk, Image
 from tqdm import tqdm
 
+import tensorflow as tf
 import tkinter as tk
-import numpy as np
+import os
 
 
 # configurations
@@ -71,8 +71,23 @@ class Screen(tk.Tk):
             set_visible_devices([], 'GPU')
 
         # loading model and images
-        __model = load_architecture(version=version)
-        __images = test_dataset()
+        __images = tf.data.TFRecordDataset(filenames=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'test.tfrecord')).map(_tfrecord_reader).batch(1).shuffle(True)
+        
+        version = os.path.join('TumorDetector2/models', 'tumorNet_' + version + '.json')
+        __weights = os.path.join('TumorDetector2/models', 'tumorNet_' + version + '.h5')
+        
+        # checking if the file exists
+        if os.path.exists(version):
+            try:
+                # reading file
+                with open(version, 'r') as architecture:
+                    __model = model_from_json(architecture.read())
+                    # loading weights
+                    __model.load_weights(__weights)
+            except Exception as e:
+                print(f"Error while reading the config file to load model. {e}.")
+        else:
+            raise FileExistsError(f"Invalid config path. Json file not found: {version}")
         
         self.__data = []
         self.__labels = []
@@ -82,23 +97,17 @@ class Screen(tk.Tk):
         for iter, (__image, __mask, __label) in enumerate(tqdm(iterable=__images, desc='Running inferences')):
             
             # converting images from tensor to pillow
-            __pred = np.asmarray(array_to_img(
-                        x=__model(__image)[0], data_format='channels_last', dtype='float32'
-                    ).resize(SIZES[window_size]['image_size'])) * 255
-            __image = np.asmarray(array_to_img(
-                        x=__image[0], data_format='channels_last', dtype='float32'
-                    ).resize(SIZES[window_size]['image_size']))
-            __mask = np.asmarray(array_to_img(
-                x=__mask[0], data_format='channels_last', dtype='float32'
-            ).resize(SIZES[window_size]['image_size']))
+            __pred = __model(__image, training=False)[0][:,:,0].numpy()
+            __image = __image[0][:,:,0].numpy()
+            __mask = __mask[0][:,:,0].numpy()
             
             # saving labels
-            self.__labels.append(__label)
+            self.__labels.append(__label.numpy()[0])
             self.__pred_labels.append(1 if __pred.sum() else 0)
             
             # overlapping results
             __segmentation = apply_masks(__image, __mask, __pred)
-            self.__data.append(ImageTk.PhotoImage(image=Image.fromarray(__segmentation)))
+            self.__data.append(ImageTk.PhotoImage(image=Image.fromarray(__segmentation.astype('uint8'))))
             if iter > 30:
                 break
         self.__n_elements = self.__data.__len__()
@@ -209,3 +218,6 @@ class Screen(tk.Tk):
         self.__image_frame.image = self.__data[self.__current_index]
         
 
+
+if __name__=='__main__':
+    Screen(2, 'v1').mainloop()
