@@ -9,9 +9,11 @@ setup(
     author_email='msouza.os@hotmail.com',
     version='1.0.0',
     description='A neural net which detect and spot any tumor in brain tomography images.',
-    long_description=open('README', 'r').read(),
-    license='LICENSE',
+    long_description=open('README.md', 'r').read(),
+    license='LICENSE.txt',
     packages=find_packages(),
+    package_data={'TumorDetector2': ['data/test.tfrecord', 'models/tumorNet_v1.json', 'models/tumorNet_v1.h5']},
+    include_package_data=True,
     python_requires='==3.9.13',
     install_requires=[
         'tensorflow==2.6.0',
