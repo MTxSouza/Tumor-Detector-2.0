@@ -3,7 +3,8 @@ from TumorDetector2.utils.metrics import overall_results,\
                                          apply_threshold
 from TumorDetector2.utils.data import _tfrecord_reader
 
-from tensorflow._api.v2.config import set_visible_devices
+from tensorflow._api.v2.config import set_visible_devices,\
+                                      list_physical_devices
 from tensorflow.keras.models import model_from_json
 from PIL import ImageTk, Image
 from io import BytesIO
@@ -12,6 +13,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import tkinter as tk
+import argparse
 import os
 
 
@@ -72,12 +74,18 @@ class Screen(tk.Tk):
         # changing device
         if on_cpu:
             set_visible_devices([], 'GPU')
+        else:
+            gpus = list_physical_devices(device_type='GPU')
+            if gpus.__len__():
+                set_visible_devices(devices=gpus[0], device_type='GPU')
+            else:
+                raise RuntimeError('No GPU has been detected')
 
         # loading model and images
         __images = tf.data.TFRecordDataset(filenames=os.path.join('TumorDetector2', 'data', 'test.tfrecord')).map(_tfrecord_reader).batch(1).shuffle(True)
         
-        version = os.path.join('TumorDetector2/models', 'tumorNet_' + version + '.json')
         __weights = os.path.join('TumorDetector2/models', 'tumorNet_' + version + '.h5')
+        version = os.path.join('TumorDetector2/models', 'tumorNet_' + version + '.json')
         
         # checking if the file exists
         if os.path.exists(version):
@@ -86,9 +94,12 @@ class Screen(tk.Tk):
                 with open(version, 'r') as architecture:
                     __model = model_from_json(architecture.read())
                 # loading weights
-                __model.load_weights(__weights)
+                try:
+                    __model.load_weights(__weights)
+                except Exception as e:
+                    raise FileExistsError(f"Error while loading the weights. {e}.")
             except Exception as e:
-                print(f"Error while reading the config file to load model. {e}.")
+                raise FileExistsError(f"Error while reading the config file to load model. {e}.")
         else:
             raise FileExistsError(f"Invalid config path. Json file not found: {version}")
         
@@ -100,7 +111,7 @@ class Screen(tk.Tk):
         for __image, __mask, __label in tqdm(iterable=__images, desc='Running inferences'):
             
             # inference
-            __pred = __model(__image, training=False)
+            __pred = tf.constant(__model.predict(__image))
             
             # applying threshold
             __pred = apply_threshold(__pred, 0.5)
@@ -116,12 +127,19 @@ class Screen(tk.Tk):
             
             # applying mask on image
             with BytesIO() as __buffer:
-                __fig = plt.figure()
-                __ax = __fig.add_subplot(111)
+                __fig, __ax = plt.subplots(ncols=2)
                 
-                __ax.imshow(__image, cmap='gray')
-                __ax.imshow(__mask, cmap='gray', alpha=0.35)
-                __ax.imshow(__pred, cmap='gnuplot', alpha=0.35)
+                __ax[0].imshow(__image, cmap='gray')
+                __ax[0].imshow(__mask, cmap='gray', alpha=0.45)
+                __ax[0].set_title('Real')
+                
+                __ax[1].imshow(__image, cmap='gray')
+                __ax[1].imshow(__pred, cmap='gnuplot', alpha=0.45)
+                __ax[1].set_title('TumorNet')
+                
+                for index in range(2):
+                    __ax[index].get_xaxis().set_visible(False)
+                    __ax[index].get_yaxis().set_visible(False)
                 
                 __fig.savefig(fname=__buffer, format='jpeg')
                 
@@ -227,4 +245,11 @@ class Screen(tk.Tk):
 
 
 if __name__=='__main__':
-    Screen(2, 'v1').mainloop()
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--window-size', '-ws', type=int, default=2, help='Specify the size of window.')
+    parser.add_argument('--version', '-v', type=str, default='v1', help='Specify the model version to be used.')
+    parser.add_argument('--cpu', '-c', action='store_true', help='Set if you want to run on CPU.')
+    arg = parser.parse_args()
+    
+    Screen(arg.window_size, arg.version, arg.cpu).mainloop()
