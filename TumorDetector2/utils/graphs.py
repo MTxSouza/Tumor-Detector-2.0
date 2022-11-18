@@ -241,35 +241,3 @@ class TrainingGraph:
         assert isinstance(samples, (np.ndarray)), 'Invalid type. samples must be a np.ndarray'
         
         return self.__structure__(loss, val_loss, accuracy, val_accuracy, mean_loss, mean_val_loss, mean_accuracy, mean_val_accuracy, current_epoch, samples)
-
-def apply_masks(image: np.ndarray, mask: np.ndarray, predicted_mask: np.ndarray) -> np.ndarray:
-    """Apply both real mask and predicted mask into
-    the image.
-
-    Args:
-        image (np.ndarray): Tomography image.
-        mask (np.ndarray): Real mask.
-        predicted_mask (np.ndarray): Predicted mask.
-
-    Returns:
-        np.ndarray: The tomography image with the real mask and the predicted mask displayed.
-    """
-
-    # applying three channels in mask
-    __background = np.zeros(shape=[image.shape[0], image.shape[1], 3])
-    __new_image = __background.copy()
-    for channel in range(3):
-        __new_image[:,:,channel] = image
-    
-    # applying real mask channel
-    __background[:,:,0] = mask
-    
-    # applying predicted channel
-    __background[:,:,1] = predicted_mask
-
-    __background = __new_image * __background
-    __background = np.clip(__background, 0, 255)
-
-    __new_image[__background>0] = __background[__background>0]
-
-    return __new_image.astype('uint8')

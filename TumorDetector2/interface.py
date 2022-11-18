@@ -2,16 +2,16 @@
 from TumorDetector2.utils.metrics import overall_results,\
                                          apply_threshold
 from TumorDetector2.utils.data import _tfrecord_reader
-from TumorDetector2.utils.graphs import apply_masks
 
 from tensorflow._api.v2.config import set_visible_devices
 from tensorflow.keras.models import model_from_json
 from PIL import ImageTk, Image
+from io import BytesIO
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
 import tensorflow as tf
 import tkinter as tk
-import numpy as np
 import os
 
 
@@ -67,6 +67,7 @@ class Screen(tk.Tk):
 
         # variables
         self.__current_index = 0
+        plt.style.use('dark_background')
 
         # changing device
         if on_cpu:
@@ -103,25 +104,32 @@ class Screen(tk.Tk):
             
             # applying threshold
             __pred = apply_threshold(__pred, 0.5)
-            self.__pred_labels.append(1 if __pred[0][:,:,0].numpy().sum() else 0)
             
-            # converting images from tensor to pillow
-            __pred = np.array(tf.keras.utils.array_to_img(
-                        x=__pred[0], data_format='channels_last', dtype='float32'
-                    ).resize(SIZES[window_size]['image_size']))
-            __image = np.array(tf.keras.utils.array_to_img(
-                        x=__image[0], data_format='channels_last', dtype='float32'
-                    ).resize(SIZES[window_size]['image_size']))
-            __mask = np.array(tf.keras.utils.array_to_img(
-                x=__mask[0], data_format='channels_last', dtype='float32'
-            ).resize(SIZES[window_size]['image_size']))
+            # getting data as numpy
+            __pred = __pred[0][:,:,0].numpy()
+            __image = __image[0][:,:,0].numpy()
+            __mask = __mask[0][:,:,0].numpy()
             
             # saving labels
+            self.__pred_labels.append(1 if __pred.sum() else 0)
             self.__labels.append(__label.numpy()[0])
             
-            # overlapping results
-            __segmentation = apply_masks(__image, __mask, __pred)
-            self.__data.append(ImageTk.PhotoImage(image=Image.fromarray(__segmentation)))
+            # applying mask on image
+            with BytesIO() as __buffer:
+                __fig = plt.figure()
+                __ax = __fig.add_subplot(111)
+                
+                __ax.imshow(__image, cmap='gray')
+                __ax.imshow(__mask, cmap='gray', alpha=0.35)
+                __ax.imshow(__pred, cmap='gnuplot', alpha=0.35)
+                
+                __fig.savefig(fname=__buffer, format='jpeg')
+                
+                # loading image as pillow
+                __data = Image.open(fp=__buffer).resize(SIZES[window_size]['image_size'])
+                plt.close(fig=__fig)
+                
+            self.__data.append(ImageTk.PhotoImage(image=__data))
         self.__n_elements = self.__data.__len__()
         # calculating results
         accuracy, recall, precision = overall_results(self.__labels, self.__pred_labels)
