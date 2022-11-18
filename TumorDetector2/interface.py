@@ -1,6 +1,7 @@
 # imports
 from TumorDetector2.utils.metrics import overall_results,\
-                                         apply_threshold
+                                         apply_threshold,\
+                                         DiceCoeficient
 from TumorDetector2.utils.data import _tfrecord_reader
 
 from tensorflow._api.v2.config import set_visible_devices,\
@@ -106,15 +107,21 @@ class Screen(tk.Tk):
         self.__data = []
         self.__labels = []
         self.__pred_labels = []
+        __dice_coeficient = DiceCoeficient()
+        __mean_overlappping_acc = 0
         
         # inference
-        for __image, __mask, __label in tqdm(iterable=__images, desc='Running inferences'):
+        for iter, (__image, __mask, __label) in enumerate(tqdm(iterable=__images, desc='Running inferences')):
             
             # inference
             __pred = tf.constant(__model.predict(__image))
             
             # applying threshold
             __pred = apply_threshold(__pred, 0.5)
+            
+            # calculating overlapping accuracy
+            __overlapping_acc = __dice_coeficient(__mask, __pred)
+            __mean_overlappping_acc += __overlapping_acc
             
             # getting data as numpy
             __pred = __pred[0][:,:,0].numpy()
@@ -151,6 +158,7 @@ class Screen(tk.Tk):
         self.__n_elements = self.__data.__len__()
         # calculating results
         accuracy, recall, precision = overall_results(self.__labels, self.__pred_labels)
+        __mean_overlappping_acc /= iter
         # getting data to be displayed
         self.__current_image = self.__data[self.__current_index]
 
@@ -220,7 +228,7 @@ class Screen(tk.Tk):
         self.__results_frame = tk.Label(master=self.__informations_frame)
         # -- text
         self.__results_frame.config(
-            text=f'Accuracy: {accuracy}\nRecall: {recall}\nPrecision: {precision}',
+            text=f'Overlapping Accuracy: {__mean_overlappping_acc.numpy():.2f}%\nAccuracy: {accuracy:.2f}%\nRecall: [Healthy: {recall[0]:.2f}% | Tumor: {recall[1]:.2f}%]\nPrecision: [Healthy: {precision[0]:.2f}% | Tumor: {precision[1]:.2f}%]',
             fg=TEXT_COLOR_1,
             background=BACKGROUND_COLOR,
             font=('Arial', SIZES[window_size]['text_size'], 'bold')
